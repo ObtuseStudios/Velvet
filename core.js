@@ -541,7 +541,7 @@ var bounce = false;
 
 function update(delta)
 {
-    killMe.colour = colourMath.colourLerp(new colour(255, 255, 255), new colour(70, 255, 200), timer);
+    killMe.colour = colourMath.colourLerp(new colour(200, 255, 255), new colour(70, 255, 200), timer);
 
     var coeffecient = bounce !== true ? 1 : -1;
     timer += (delta / 1000) * coeffecient;
