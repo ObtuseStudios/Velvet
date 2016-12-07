@@ -271,11 +271,26 @@ var Rand;
     ;
 })(Rand || (Rand = {}));
 //Holds a point in 2D space
+//Temporary - vectors .x or .y cannot be set see: https://github.com/VelvetOrg/velvet.js/issues/5
 var Vector2 = (function () {
     function Vector2(x, y) {
-        this.x = x;
-        this.y = y;
+        this._x = x;
+        this._y = y;
     }
+    Object.defineProperty(Vector2.prototype, "x", {
+        get: function () { return this._x; },
+        set: function (n) { this._x = n; } // { Debug.Warning("Do not set x directly as it causes problems with the scenegraph! Change has been ignored"); }
+        ,
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Vector2.prototype, "y", {
+        get: function () { return this._y; },
+        set: function (n) { this._y = n; } // { Debug.Warning("Do not set y directly as it causes problems with the scenegraph! Change has been ignored"); }
+        ,
+        enumerable: true,
+        configurable: true
+    });
     Vector2.prototype.ToString = function () { return Vector2.ToString(this); }; //For debugging purposes
     Vector2.prototype.ArrayRef = function (index) { return (index == 0) ? this.x : this.y; }; //Will take an index and return either the x or y component
     Vector2.prototype.SqrMagnitude = function () { return (this.x * this.x) + (this.y * this.y); }; //Will find the square length of a vector from the origin
@@ -285,10 +300,48 @@ var Vector2 = (function () {
         var result = new Vector2(0, 0);
         var mag = this.Magnitude();
         //Apply
-        result.x = this.x / mag;
-        result.y = this.y / mag;
+        result._x = this.x / mag;
+        result._y = this.y / mag;
         //Done
         return result;
+    };
+    //Non static maths
+    Vector2.prototype.Set = function (x, y) { this._x = x; this._y = y; };
+    Vector2.prototype.Add = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
+        }
+        args.unshift(this);
+        var res = Vector2._Operation(args, Vector2._AddOperator);
+        this.Set(res.x, res.y);
+    };
+    Vector2.prototype.Sub = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
+        }
+        args.unshift(this);
+        var res = Vector2._Operation(args, Vector2._SubOperator);
+        this.Set(res.x, res.y);
+    };
+    Vector2.prototype.Mul = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
+        }
+        args.unshift(this);
+        var res = Vector2._Operation(args, Vector2._MulOperator);
+        this.Set(res.x, res.y);
+    };
+    Vector2.prototype.Div = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i - 0] = arguments[_i];
+        }
+        args.unshift(this);
+        var res = Vector2._Operation(args, Vector2._DivOperator);
+        this.Set(res.x, res.y);
     };
     //Static vector math functions:
     Vector2.Dot = function (lhs, rhs) { return (lhs.x * rhs.x) + (lhs.y * rhs.y); };
@@ -321,12 +374,12 @@ var Vector2 = (function () {
         //Allows for infinte arguments to be parsed
         for (var i = 1; i < li.length; i++) {
             if (li[i] instanceof Vector2) {
-                result.x = operator(result.x, li[i].x);
-                result.y = operator(result.y, li[i].y);
+                result._x = operator(result._x, li[i]._x);
+                result._y = operator(result._y, li[i]._y);
             }
             else {
-                result.x = operator(result.x, li[i]);
-                result.y = operator(result.y, li[i]);
+                result._x = operator(result._x, li[i]);
+                result._y = operator(result._y, li[i]);
             }
         }
         return result;
@@ -373,6 +426,8 @@ var Vector2 = (function () {
     Vector2.down = new Vector2(0, -1);
     return Vector2;
 }());
+//Just a temporary solution
+Debug.Warning("For transform setters do not modify .x or .y directly instead always instanciate a new Vector2()");
 //This class handles all of the timing related operations
 var Time;
 (function (Time) {
@@ -572,10 +627,14 @@ var Input;
         var down = (Input.GetKey(Input.KeyCode.down) || Input.GetKey(Input.KeyCode.s));
         var up = (Input.GetKey(Input.KeyCode.up) || Input.GetKey(Input.KeyCode.w));
         _axis = new Vector2(0, 0);
-        _axis.x += (right == true) ? 1 : 0;
-        _axis.x -= (left == true) ? 1 : 0;
-        _axis.y += (up == true) ? 1 : 0;
-        _axis.y -= (down == true) ? 1 : 0;
+        //_axis.x += (right == true)? 1 : 0;
+        //_axis.x -= (left == true)? 1 : 0;
+        _axis = Vector2.Add(new Vector2(_axis.x, 0), new Vector2((right == true) ? 1 : 0, 0));
+        _axis = Vector2.Sub(new Vector2(_axis.x, 0), new Vector2((left == true) ? 1 : 0, 0));
+        //_axis.y += (up == true)? 1 : 0;
+        //_axis.y -= (down == true)? 1 : 0;
+        _axis = Vector2.Add(_axis, new Vector2(0, (up == true) ? 1 : 0));
+        _axis = Vector2.Sub(_axis, new Vector2(0, (down == true) ? 1 : 0));
     }
     //Will prevent default browser behaviour
     function _prevent(event) { event.preventDefault(); }
@@ -672,23 +731,6 @@ var Base = (function () {
         delete this;
     };
     Base.Destroy = function (object) { object.Destroy(); };
-    // -- NOT WORKING --
-    //Will create an exact copy of this
-    Base.prototype.Clone = function () {
-        var result = (new this.constructor);
-        for (var attrib in this) {
-            if (this.hasOwnProperty(attrib)) {
-                //Instance ID must be unique for every object
-                if (this[attrib] === this.instanceID) {
-                    continue;
-                }
-                result[attrib] = this[attrib];
-            }
-        }
-        result.name = this.name + " clone";
-        return result;
-    };
-    Base.Instantiate = function (original) { return original.Clone(); };
     //Counts up everytime an instance of this class is created
     //Later update the allocation system to account for destroyed entitys
     Base._instanceCounter = 0;
@@ -847,35 +889,122 @@ var Component = (function () {
 //A transform reprents to positioning of a gameobject
 var Transform = (function (_super) {
     __extends(Transform, _super);
-    function Transform() {
-        _super.apply(this, arguments);
+    function Transform(name) {
+        if (name === void 0) { name = "Transform"; }
+        _super.call(this, name);
         //Currently all properties are public
+        this._position = new Vector2(0, 0); //Global position
+        this._scale = new Vector2(1, 1); //Global scale
+        this._rotation = 0.0; //Global rotation
+        this._localPosition = new Vector2(0, 0);
+        this._localScale = new Vector2(0, 0);
+        this._localRotation = 0.0;
         this._position = new Vector2(0, 0);
         this._scale = new Vector2(1, 1);
         this._rotation = 0.0;
+        this._localPosition = new Vector2(0, 0);
+        this._localScale = new Vector2(1, 1);
+        this._localRotation = 0.0;
     }
     Object.defineProperty(Transform.prototype, "position", {
-        //private _localPositon : Vector2 = new Vector2(0, 0);
-        //private _localScale : Vector2 = new Vector2(0, 0);
-        //private _localRotation : number = 0.0;
         //Setters are where the magic happens
         get: function () { return this._position; },
-        //public get localPosition() : Vector2 { return this._localPositon; }
-        //public get localRotation() : number { return this._localRotation; }
-        //public get localScale() : Vector2 { return this._localScale; }
-        set: function (p) { this._position = p; _super.prototype.Update.call(this); },
+        //Setters are not very neat, but unfortunatly this is requred
+        set: function (p) {
+            //Recalculate the local position relative to the current position
+            this._position = p;
+            var ancestor = this.GetClosestTransformParent();
+            if (ancestor == null) {
+                this._localPosition = this._position.Clone();
+            }
+            else {
+                this._localPosition = Vector2.Sub(this._position, ancestor._position);
+            }
+            _super.prototype.Update.call(this);
+        },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(Transform.prototype, "rotation", {
         get: function () { return this._rotation; },
-        set: function (r) { this._rotation = r; _super.prototype.Update.call(this); },
+        set: function (r) {
+            this._rotation = r;
+            var ancestor = this.GetClosestTransformParent();
+            if (ancestor == null) {
+                this._localRotation = this._rotation * 1.0;
+            } //Making sure a pointer is not parsed
+            else {
+                this._localRotation = this._rotation - ancestor._rotation;
+            }
+            _super.prototype.Update.call(this);
+        },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(Transform.prototype, "scale", {
         get: function () { return this._scale; },
-        set: function (s) { this._scale = s; _super.prototype.Update.call(this); },
+        set: function (s) {
+            this._scale = s;
+            var ancestor = this.GetClosestTransformParent();
+            if (ancestor == null) {
+                this._localScale = this._scale.Clone();
+            }
+            else {
+                this._localScale = Vector2.Div(this._scale, ancestor._scale);
+            } // May cause a division by zero error
+            _super.prototype.Update.call(this);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Transform.prototype, "localPosition", {
+        get: function () { return this._localPosition; },
+        set: function (lp) {
+            //Recalculate the local position relative to the current position
+            this._localPosition = lp;
+            var ancestor = this.GetClosestTransformParent();
+            if (ancestor == null) {
+                this._position = this._localPosition.Clone();
+            }
+            else {
+                this._position = Vector2.Add(this._localPosition, ancestor._position);
+            }
+            _super.prototype.Update.call(this);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Transform.prototype, "localRotation", {
+        get: function () { return this._localRotation; },
+        set: function (lr) {
+            //Recalculate the local position relative to the current position
+            this._localRotation = lr;
+            var ancestor = this.GetClosestTransformParent();
+            if (ancestor == null) {
+                this._rotation = this._localRotation * 1.0;
+            }
+            else {
+                this._rotation = this._localRotation + ancestor._rotation;
+            }
+            _super.prototype.Update.call(this);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Transform.prototype, "localScale", {
+        get: function () { return this._localScale; },
+        set: function (ls) {
+            //Recalculate the local position relative to the current position
+            this._localScale = ls;
+            var ancestor = this.GetClosestTransformParent();
+            if (ancestor == null) {
+                this._scale = this._localScale.Clone();
+            }
+            else {
+                this._scale = Vector2.Add(this._localScale, ancestor._scale);
+            }
+            _super.prototype.Update.call(this);
+        },
         enumerable: true,
         configurable: true
     });
@@ -895,52 +1024,19 @@ var Transform = (function (_super) {
     Transform.prototype.Update = function () {
         //We can assume if this part of the code has been reached then a transformation has been made to the parent
         var parentTransform = this.GetClosestTransformParent();
-        Debug.Log("Update called on: " + this.name);
+        //Modify the position by the nearest parents change in value
+        //Note this will call the setters
+        this.position = Vector2.Add(this.localPosition, parentTransform.position);
+        this.scale = Vector2.Mul(this.localScale, parentTransform.scale);
+        this.rotation = this.localRotation + parentTransform.rotation;
+        //this.localPosition = Vector2.Sub(this._position, parentTransform._position);
+        //this.localScale = Vector2.Sub(this._scale, parentTransform._scale);
+        //this.localRotation = this._rotation - parentTransform._rotation;
         //This will call update on all children
         _super.prototype.Update.call(this);
-        /*
-        function MoveChildren(node : Transform)
-        {
-            for(let childID in node._children)
-            {
-                //Type must be transform for it to be affected
-                if(!(node._children[childID] instanceof Transform)) { continue; }
-
-                //Move by position (later local)
-                let child = <Transform>node._children[childID]
-
-                child.position = Vector2.Add(child.position, node.position);
-                child.scale = Vector2.Mul(child.scale, node.scale);
-                child.rotation = child.rotation + node.rotation;
-            }
-        } MoveChildren(this);
-        */
     };
-    /*
-        public set position(a : Vector2)
-        {
-            this._position = a;
-    
-            //Bad, this method assumes the parent one layer above is a transform
-            if(this.parent instanceof Transform) { this._localPositon = Vector2.Sub(this.position, this.parent.position); }
-    
-            this.Update();
-        }
-    
-        public set rotation(a : number) { this._rotation = a; this.Update(); }
-        public set scale(a : Vector2) { this._scale = a; this.Update(); }
-    
-        constructor(name:string="Transform")
-        {
-            super(name);
-    
-            this.position = new Vector2(0, 0);
-            this.scale = new Vector2(1, 1);
-            this.rotation = 0.0;
-        }
-    */
     //For debugging
-    Transform.prototype.GetExtraInformation = function () { return this.position.ToString() + ", " + this.rotation + ", " + this.scale.ToString(); };
+    Transform.prototype.GetExtraInformation = function () { return this.position.ToString() + ", " + this.rotation + ", " + this.scale.ToString() + " <-> " + this._localPosition.ToString() + ", " + this.localRotation + ", " + this.localScale.ToString(); };
     return Transform;
 }(SceneNode));
 ;
@@ -952,7 +1048,7 @@ var Rectangle = (function (_super) {
         _super.call(this);
         this.strokeColour = new Colour(255, 255, 255);
         this.fillColour = new Colour(0, 0, 0);
-        this.size = new Vector2(10, 10);
+        this.size = new Vector2(100, 100);
         this.stroke = false;
     }
     return Rectangle;
@@ -1050,6 +1146,10 @@ var Renderer = (function () {
     Renderer.prototype.Draw = function (obj) { this.DrawRect(obj.renderer, obj.transform); };
     //Handles interaction with the draw stack
     Renderer.prototype.AddGameObject = function (g) { this._drawStack.unshift(g); };
+    Renderer.prototype.AddGameObjects = function (gos) { for (var _i = 0, gos_1 = gos; _i < gos_1.length; _i++) {
+        var g = gos_1[_i];
+        this.AddGameObject(g);
+    } };
     //This function will be called every frame by the time class
     //Handles poping of the draw stack
     Renderer.prototype.Update = function () {

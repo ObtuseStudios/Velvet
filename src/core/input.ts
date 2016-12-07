@@ -54,12 +54,16 @@ namespace Input
 
         _axis = new Vector2(0, 0);
 
-        _axis.x += (right == true)? 1 : 0;
-        _axis.x -= (left == true)? 1 : 0;
-        
+        //_axis.x += (right == true)? 1 : 0;
+        //_axis.x -= (left == true)? 1 : 0;
+        _axis = Vector2.Add(new Vector2(_axis.x, 0), new Vector2((right == true)? 1 : 0, 0));
+        _axis = Vector2.Sub(new Vector2(_axis.x, 0), new Vector2((left == true)? 1 : 0, 0));
 
-        _axis.y += (up == true)? 1 : 0;
-        _axis.y -= (down == true)? 1 : 0;
+        //_axis.y += (up == true)? 1 : 0;
+        //_axis.y -= (down == true)? 1 : 0;
+        _axis = Vector2.Add(_axis, new Vector2(0, (up == true)? 1 : 0));
+        _axis = Vector2.Sub(_axis, new Vector2(0, (down == true)? 1 : 0));
+
     }
 
     //Will prevent default browser behaviour

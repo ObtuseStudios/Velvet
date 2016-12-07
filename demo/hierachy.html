@@ -12,35 +12,65 @@
     
     <body>
     <script>
+/*
+var player = new GameObject("player");
 
-let player = new GameObject("player");
+var rightArm = new GameObject("rightArm");
+var leftArm = new GameObject("leftArm");
+var gun = new GameObject("gun");
 
-let rightArm = new GameObject("rightArm");
-let leftArm = new GameObject("leftArm");
-let gun = new GameObject("gun");
-
-let scope = new GameObject("scope");
-let silencer = new GameObject("silencer");
-let magazine = new GameObject("magazine");
+var scope = new GameObject("scope");
+var silencer = new GameObject("silencer");
+var magazine = new GameObject("magazine");
 
 gun.transform.AddChildren   ([scope.transform,   silencer.transform, magazine.transform]);
 player.transform.AddChildren([leftArm.transform, rightArm.transform, gun.transform]);
 
-let middleman = new SceneNode("middle man");
+var middleman = new SceneNode("middle man");
 
 middleman.SetParent(player.transform);
 middleman.AddChild(gun.transform);
 
 SceneNode.Print();
 
-gun.transform.position = new Vector2(10, 10); Debug.Spacer();
-player.transform.rotation += 20; Debug.Spacer();
-middleman.Update();
+gun.transform.position = new Vector2(1, 2);
+gun.transform.scale = new Vector2(0.5, 1);
+gun.transform.rotation = 15;
 
-// function Start() { Display.Create(); }
-// function Update() { }
+SceneNode.Print();
+
+silencer.transform.scale = new Vector2(2, 0.5);
+magazine.transform.rotation = 90;
+
+SceneNode.Print();
+
+gun.transform.localPosition = new Vector2(3, -6);
+player.transform.localPosition = new Vector2(1, 1);
+
+SceneNode.Print();
+*/
+
+let parent = new Transform("parent");
+let son = new Transform("son");
+let daughter = new Transform("daughter");
+let baby = new Transform("baby");
+
+
+
+parent.AddChildren([son, daughter]);
+baby.parent = son;
+
+parent.position = new Vector2(10, 10);
+son.localPosition = new Vector2(1, 1);
+baby.localPosition = new Vector2(-3, -3);
+
+baby.position = new Vector2(2, 2);
+
+SceneNode.Print();
 
     </script>
+
+See the developer console (Ctrl + Shift + I)
 
     </body>
 </html>

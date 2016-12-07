@@ -1,10 +1,17 @@
 //Holds a point in 2D space
+//Temporary - vectors .x or .y cannot be set see: https://github.com/VelvetOrg/velvet.js/issues/5
 class Vector2
 {
-    public x : number;
-    public y : number;
+    private _x : number;
+    private _y : number;
 
-    constructor(x : number, y : number) { this.x = x; this.y = y; }
+    public get x() : number { return this._x; }
+    public get y() : number { return this._y; }
+
+    public set x(n : number) { this._x = n; } // { Debug.Warning("Do not set x directly as it causes problems with the scenegraph! Change has been ignored"); }
+    public set y(n : number) { this._y = n; } // { Debug.Warning("Do not set y directly as it causes problems with the scenegraph! Change has been ignored"); }
+
+    constructor(x : number, y : number) { this._x = x; this._y = y; }
 
     public ToString() : string              { return Vector2.ToString(this); } //For debugging purposes
     public ArrayRef(index : number) : number{ return (index == 0)? this.x : this.y; } //Will take an index and return either the x or y component
@@ -17,12 +24,19 @@ class Vector2
         var mag = this.Magnitude();
 
         //Apply
-        result.x = this.x / mag;
-        result.y = this.y / mag;
+        result._x = this.x / mag;
+        result._y = this.y / mag;
 
         //Done
         return result;
     }
+
+    //Non static maths
+    private Set(x : number, y : number) : void { this._x = x; this._y = y; }
+    public Add(...args : any[]) : void { args.unshift(this); let res = Vector2._Operation(args, Vector2._AddOperator); this.Set(res.x, res.y); }
+    public Sub(...args : any[]) : void { args.unshift(this); let res = Vector2._Operation(args, Vector2._SubOperator); this.Set(res.x, res.y); }
+    public Mul(...args : any[]) : void { args.unshift(this); let res = Vector2._Operation(args, Vector2._MulOperator); this.Set(res.x, res.y); }
+    public Div(...args : any[]) : void { args.unshift(this); let res = Vector2._Operation(args, Vector2._DivOperator); this.Set(res.x, res.y); }
 
     //Static built in specific vectors
     public static zero : Vector2    = new Vector2(0, 0);
@@ -70,8 +84,8 @@ class Vector2
 
         //Allows for infinte arguments to be parsed
         for(var i = 1; i < li.length; i++) {
-            if(li[i] instanceof Vector2) { result.x = operator(result.x, li[i].x); result.y = operator(result.y, li[i].y); }
-            else                         { result.x = operator(result.x, li[i]);   result.y = operator(result.y, li[i]); } }
+            if(li[i] instanceof Vector2) { result._x = operator(result._x, li[i]._x); result._y = operator(result._y, li[i]._y); }
+            else                         { result._x = operator(result._x, li[i]);   result._y = operator(result._y, li[i]); } }
 
         return result;
     }
@@ -86,3 +100,6 @@ class Vector2
     public static Equal(a : Vector2, b : Vector2)       : boolean { return (Mathf.Approximatly(a.x, b.x) && Mathf.Approximatly(a.y, b.y)); }
     public static NotEqual(a : Vector2, b : Vector2)    : boolean { return (!Mathf.Approximatly(a.x, b.x) || !Mathf.Approximatly(a.y, b.y)); }
 }
+
+//Just a temporary solution
+Debug.Warning("For transform setters do not modify .x or .y directly instead always instanciate a new Vector2()");

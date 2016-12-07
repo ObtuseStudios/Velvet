@@ -94,6 +94,7 @@ class Renderer
 
     //Handles interaction with the draw stack
     public AddGameObject(g: GameObject): void { this._drawStack.unshift(g); }
+    public AddGameObjects(gos: Array<GameObject>): void { for(let g of gos) { this.AddGameObject(g); } }
 
     //This function will be called every frame by the time class
     //Handles poping of the draw stack

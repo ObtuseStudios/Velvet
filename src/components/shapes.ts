@@ -13,7 +13,7 @@ class Rectangle extends Component
 
         this.strokeColour = new Colour(255, 255, 255);
         this.fillColour = new Colour(0, 0, 0);
-        this.size = new Vector2(10, 10);
+        this.size = new Vector2(100, 100);
         this.stroke = false;
     }
 }

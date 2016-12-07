@@ -29,7 +29,7 @@ class Base
 
     // -- NOT WORKING --
     
-    //Will create an exact copy of this
+    /*Will create an exact copy of this
     public Clone<T extends Base>(): T
     {
         let result = <T>(new (<any>this.constructor));
@@ -50,4 +50,5 @@ class Base
     }
 
     public static Instantiate(original : Base) : Base { return original.Clone(); }
+    */
 }

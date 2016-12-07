@@ -36,55 +36,56 @@ function Awake() {
     //Webpage features
     document.body.requestPointerLock();
     //Rendering
+
     Display.Create(800, 400);
     Display.backgroundColour = Colour.magenta;
     player = new Player();
     cursor = new GameObject();
     gun = new GameObject();
+
+    gun.transform.parent = player.transform;
+
     //Set properties (will later be handled by json)
     player.transform.position = new Vector2(400, 200);
     player.renderer.size = new Vector2(20, 20);
     player.renderer.fillColour = Colour.white;
     cursor.renderer.size = new Vector2(5, 5);
     cursor.renderer.fillColour = Colour.red;
+
     //Later uses a scene graph
-    gun.renderer.size = new Vector2(5, 20);
+    gun.renderer.size = new Vector2(40, 10);
     gun.renderer.fillColour = Colour.white;
 }
 function Update() {
     Display.Clear();
     var direction = new Vector2(0, 0);
     //Input    
-    if (Input.GetKey(Input.KeyCode.a)) {
-        direction.x -= 1;
-    }
-    if (Input.GetKey(Input.KeyCode.d)) {
-        direction.x += 1;
-    }
-    if (Input.GetKey(Input.KeyCode.w)) {
-        direction.y -= 1;
-    }
-    if (Input.GetKey(Input.KeyCode.s)) {
-        direction.y += 1;
-    }
-    if (Mathf.Abs(direction.x) + Mathf.Abs(direction.y) > 1) {
-        direction = Vector2.Mul(direction, 0.7);
-    }
+    if (Input.GetKey(Input.KeyCode.a)) { direction.Add( new Vector2(-Const.MOVE_SPEED, 0)); }
+    if (Input.GetKey(Input.KeyCode.d)) { direction.Add( new Vector2(+Const.MOVE_SPEED, 0)); }
+    if (Input.GetKey(Input.KeyCode.w)) { direction .Add(new Vector2(0, -Const.MOVE_SPEED)); }
+    if (Input.GetKey(Input.KeyCode.s)) { direction.Add( new Vector2(0, +Const.MOVE_SPEED)); }
+    
+    if (Mathf.Abs(direction.x) + Mathf.Abs(direction.y) > 1) { direction.Mul(0.7); }
+
     //Move
-    player.velocity = Vector2.Mul(direction, Const.MOVE_SPEED);
-    //Apply friction
-    player.velocity.x *= Const.FRICTION;
-    player.velocity.y *= Const.FRICTION;
-    //Apply the velocity
-    player.transform.position.x += player.velocity.x;
-    player.transform.position.y += player.velocity.y;
+    player.velocity = direction.Clone();
+
+    //Debug.Log(player.velocity.ToString());
+
+    //Apply friction & velocity
+    player.velocity.Mul(Const.FRICTION);
+    player.transform.position.Add(player.velocity);
+
     //Rotate to face the cursor
     var normalizedMouse = Vector2.Sub(cursor.transform.position, player.transform.position);
     player.transform.rotation = Mathf.Atan2(normalizedMouse.y, normalizedMouse.x) * Mathf.radToDeg;
+
     //Draw the cursor at mouse position
     cursor.transform.position = Input.GetMousePosition(Display);
+
     //Later handled by the scene graph
     gun.transform.position = Vector2.Add(player.transform.position, Vector2.Mul((cursor.transform.position), 10).Normalize());
+
     //Temp
     Display.AddGameObject(player);
     Display.AddGameObject(gun);
