@@ -76,7 +76,7 @@ namespace Input
     window.addEventListener("keydown", _CallbackKeyDown);
     window.addEventListener("keyup", _CallbackKeyUp);
 
-    Time.AddLateUpdateCallback(_CallbackUpdate); //Needs to subscribe to late update
+    Time.AddLateUpdate(_CallbackUpdate); //Needs to subscribe to late update
 
     //Defines all javascript key codes
     export let KeyCode = 

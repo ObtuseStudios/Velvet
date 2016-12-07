@@ -6,13 +6,13 @@
         <link rel="stylesheet" type="text/css" href="../misc/style.css"/>
         
         <!-- Written in typescript and compiled -->
+        <script type="text/javascript" src="../src/lib/mainloop.min.js" ></script>
         <script type="text/javascript" src="../build/script.js" ></script>
         <script type="text/javascript" src="../misc/stats.js" ></script>
     </head>
     
     <body>
     <script>
-/*
 var player = new GameObject("player");
 
 var rightArm = new GameObject("rightArm");
@@ -31,43 +31,23 @@ var middleman = new SceneNode("middle man");
 middleman.SetParent(player.transform);
 middleman.AddChild(gun.transform);
 
-SceneNode.Print();
+//SceneNode.Print();
 
 gun.transform.position = new Vector2(1, 2);
 gun.transform.scale = new Vector2(0.5, 1);
 gun.transform.rotation = 15;
 
-SceneNode.Print();
+//SceneNode.Print();
 
 silencer.transform.scale = new Vector2(2, 0.5);
 magazine.transform.rotation = 90;
 
-SceneNode.Print();
+//SceneNode.Print();
 
 gun.transform.localPosition = new Vector2(3, -6);
 player.transform.localPosition = new Vector2(1, 1);
 
 SceneNode.Print();
-*/
-
-let parent = new Transform("parent");
-let son = new Transform("son");
-let daughter = new Transform("daughter");
-let baby = new Transform("baby");
-
-
-
-parent.AddChildren([son, daughter]);
-baby.parent = son;
-
-parent.position = new Vector2(10, 10);
-son.localPosition = new Vector2(1, 1);
-baby.localPosition = new Vector2(-3, -3);
-
-baby.position = new Vector2(2, 2);
-
-SceneNode.Print();
-
     </script>
 
 See the developer console (Ctrl + Shift + I)

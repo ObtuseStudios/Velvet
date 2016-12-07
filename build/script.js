@@ -428,64 +428,86 @@ var Vector2 = (function () {
 }());
 //Just a temporary solution
 Debug.Warning("For transform setters do not modify .x or .y directly instead always instanciate a new Vector2()");
+//This assumes that ("../lib/mainloop.min.js") is imported from html
 //This class handles all of the timing related operations
 var Time;
 (function (Time) {
+    //export let timescale : number = 1.0; //Move by this much percent every frame
     Time.delta = 0; //Difference in time between subsequent function calls
     Time.time = 0; //Counter since game began
+    Time.fps = 0; //Frames per second
+    Time.maxfps = 60; //Target
     //Holds an array of call backs
-    var _updateCallbacks = [];
-    var _startCallbacks = [];
     var _awakeCallbacks = [];
-    var _lateCallbacks = [];
+    var _startCallbacks = [];
     var _earlyCallbacks = [];
+    var _updateCallbacks = [];
+    var _drawCallbacks = [];
+    var _lateCallbacks = [];
+    function SetFps(f) { Time.maxfps = f; MainLoop.setMaxAllowedFPS(Time.maxfps); }
+    Time.SetFps = SetFps;
     //Functions call backs 
-    function AddEarlyUpdateCallback(call) { _earlyCallbacks.push(call); }
-    Time.AddEarlyUpdateCallback = AddEarlyUpdateCallback;
+    function AddAwake(call) { _awakeCallbacks.push(call); }
+    Time.AddAwake = AddAwake;
     ;
-    function AddLateUpdateCallback(call) { _lateCallbacks.push(call); }
-    Time.AddLateUpdateCallback = AddLateUpdateCallback;
+    function AddStart(call) { _startCallbacks.push(call); }
+    Time.AddStart = AddStart;
     ;
-    function AddUpdateCallback(call) { _updateCallbacks.push(call); }
-    Time.AddUpdateCallback = AddUpdateCallback;
+    function AddEarlyUpdate(call) { _earlyCallbacks.push(call); }
+    Time.AddEarlyUpdate = AddEarlyUpdate;
     ;
-    function AddAwakeCallback(call) { _awakeCallbacks.push(call); }
-    Time.AddAwakeCallback = AddAwakeCallback;
+    function AddUpdate(call) { _updateCallbacks.push(call); }
+    Time.AddUpdate = AddUpdate;
     ;
-    function AddStartCallback(call) { _startCallbacks.push(call); }
-    Time.AddStartCallback = AddStartCallback;
+    function AddDrawUpdate(call) { _earlyCallbacks.push(call); }
+    Time.AddDrawUpdate = AddDrawUpdate;
     ;
-    //Called when the page loads
-    function _Awake() {
-        for (var i = 0; i < _awakeCallbacks.length; i++) {
-            _awakeCallbacks[i]();
+    function AddLateUpdate(call) { _lateCallbacks.push(call); }
+    Time.AddLateUpdate = AddLateUpdate;
+    ;
+    //Actual functions
+    function _Awake() { for (var _i = 0, _awakeCallbacks_1 = _awakeCallbacks; _i < _awakeCallbacks_1.length; _i++) {
+        var c = _awakeCallbacks_1[_i];
+        c();
+    } _Start(); }
+    ;
+    function _Start() { for (var _i = 0, _startCallbacks_1 = _startCallbacks; _i < _startCallbacks_1.length; _i++) {
+        var c = _startCallbacks_1[_i];
+        c();
+    } MainLoop.start(); }
+    ;
+    function _EarlyUpdate(timestamp, delta) { Time.delta = delta; for (var _i = 0, _earlyCallbacks_1 = _earlyCallbacks; _i < _earlyCallbacks_1.length; _i++) {
+        var c = _earlyCallbacks_1[_i];
+        c();
+    } }
+    function _Update() { for (var _i = 0, _updateCallbacks_1 = _updateCallbacks; _i < _updateCallbacks_1.length; _i++) {
+        var c = _updateCallbacks_1[_i];
+        c();
+    } }
+    ;
+    function _DrawUpdate(interpolationPercentage) { for (var _i = 0, _drawCallbacks_1 = _drawCallbacks; _i < _drawCallbacks_1.length; _i++) {
+        var c = _drawCallbacks_1[_i];
+        c();
+    } }
+    function _LateUpdate(fps, panic) {
+        for (var _i = 0, _lateCallbacks_1 = _lateCallbacks; _i < _lateCallbacks_1.length; _i++) {
+            var c = _lateCallbacks_1[_i];
+            c();
         }
-        _Start();
+        //Set the frames per second
+        Time.fps = fps * 1.0;
+        Time.time += Time.delta;
+        if (panic) {
+            var discardedTime = Mathf.Round(MainLoop.resetFrameDelta());
+            Debug.Warning('Main loop stopped - discarding ' + discardedTime + 'ms');
+        }
     }
     ;
-    //Called when the page and basic operations have been formed
-    function _Start() {
-        for (var i = 0; i < _startCallbacks.length; i++) {
-            _startCallbacks[i]();
-        }
-        requestAnimationFrame(_Update);
-    }
-    ;
-    function _EarlyUpdate() { for (var i = 0; i < _earlyCallbacks.length; i++) {
-        _updateCallbacks[i]();
-    } _Update(); }
-    ;
-    function _Update() { for (var i = 0; i < _updateCallbacks.length; i++) {
-        _updateCallbacks[i]();
-    } _LateUpdate(); }
-    ;
-    function _LateUpdate() { for (var i = 0; i < _lateCallbacks.length; i++) {
-        _lateCallbacks[i]();
-    } requestAnimationFrame(_EarlyUpdate); }
-    ;
-    //Needs to find delta time ect.
-    Time.AddLateUpdateCallback(function () { Time.time += 1.0; });
     window.addEventListener("load", _Awake);
+    MainLoop.setBegin(_EarlyUpdate);
+    MainLoop.setUpdate(_Update);
+    MainLoop.setDraw(_DrawUpdate);
+    MainLoop.setEnd(_LateUpdate);
 })(Time || (Time = {}));
 //Converts RGBA color into css colour
 var Colour = (function () {
@@ -644,7 +666,7 @@ var Input;
     window.addEventListener("mouseup", _CallbackMouseUp);
     window.addEventListener("keydown", _CallbackKeyDown);
     window.addEventListener("keyup", _CallbackKeyUp);
-    Time.AddLateUpdateCallback(_CallbackUpdate); //Needs to subscribe to late update
+    Time.AddLateUpdate(_CallbackUpdate); //Needs to subscribe to late update
     //Defines all javascript key codes
     Input.KeyCode = {
         mousemiddle: 1,
@@ -892,19 +914,13 @@ var Transform = (function (_super) {
     function Transform(name) {
         if (name === void 0) { name = "Transform"; }
         _super.call(this, name);
-        //Currently all properties are public
-        this._position = new Vector2(0, 0); //Global position
-        this._scale = new Vector2(1, 1); //Global scale
-        this._rotation = 0.0; //Global rotation
-        this._localPosition = new Vector2(0, 0);
-        this._localScale = new Vector2(0, 0);
-        this._localRotation = 0.0;
         this._position = new Vector2(0, 0);
         this._scale = new Vector2(1, 1);
         this._rotation = 0.0;
         this._localPosition = new Vector2(0, 0);
         this._localScale = new Vector2(1, 1);
         this._localRotation = 0.0;
+        this._rotationCenter = this._position.Clone();
     }
     Object.defineProperty(Transform.prototype, "position", {
         //Setters are where the magic happens
@@ -920,6 +936,7 @@ var Transform = (function (_super) {
             else {
                 this._localPosition = Vector2.Sub(this._position, ancestor._position);
             }
+            this._rotationCenter = this._position.Clone();
             _super.prototype.Update.call(this);
         },
         enumerable: true,
@@ -969,6 +986,7 @@ var Transform = (function (_super) {
             else {
                 this._position = Vector2.Add(this._localPosition, ancestor._position);
             }
+            this._rotationCenter = this._position.Clone();
             _super.prototype.Update.call(this);
         },
         enumerable: true,
@@ -1008,6 +1026,12 @@ var Transform = (function (_super) {
         enumerable: true,
         configurable: true
     });
+    Object.defineProperty(Transform.prototype, "center", {
+        //Right now the center cannot be set
+        get: function () { return this._rotationCenter; },
+        enumerable: true,
+        configurable: true
+    });
     //Will find the closes transform parent
     Transform.prototype.GetClosestTransformParent = function () {
         //Keep looping up one parent until root is reached
@@ -1029,6 +1053,7 @@ var Transform = (function (_super) {
         this.position = Vector2.Add(this.localPosition, parentTransform.position);
         this.scale = Vector2.Mul(this.localScale, parentTransform.scale);
         this.rotation = this.localRotation + parentTransform.rotation;
+        this._rotationCenter = this._position.Clone();
         //this.localPosition = Vector2.Sub(this._position, parentTransform._position);
         //this.localScale = Vector2.Sub(this._scale, parentTransform._scale);
         //this.localRotation = this._rotation - parentTransform._rotation;
@@ -1106,12 +1131,18 @@ var Renderer = (function () {
     Renderer.prototype.SetStrokeColour = function (colour) { this._context.strokeStyle = colour.GetStyle(); };
     Renderer.prototype.Clear = function () { this._context.clearRect(0, 0, this.width, this.height); };
     //Shape drawing functions
-    Renderer.prototype.SimpleDrawRect = function (position, scale, col, rot) {
+    Renderer.prototype.SimpleDrawRect = function (position, scale, col, rot, center) {
         if (col === void 0) { col = Colour.black; }
         if (rot === void 0) { rot = 0; }
+        if (center === void 0) { center = null; }
         //Save canvas context state
         this._context.save();
-        this._context.translate(position.x, position.y);
+        if (center == null) {
+            this._context.translate(position.x, position.y);
+        }
+        else {
+            this._context.translate(center.x, center.y);
+        }
         this._context.rotate(rot * Mathf.degToRad);
         //this._context.scale(scale..x, scale.y);
         //Draw
@@ -1120,12 +1151,18 @@ var Renderer = (function () {
         //Done
         this._context.restore();
     };
-    Renderer.prototype.SimpleStrokeRect = function (position, scale, col, rot) {
+    Renderer.prototype.SimpleStrokeRect = function (position, scale, col, rot, center) {
         if (col === void 0) { col = Colour.black; }
         if (rot === void 0) { rot = 0; }
+        if (center === void 0) { center = null; }
         //Save canvas context state
         this._context.save();
-        this._context.translate(position.x, position.y);
+        if (center == null) {
+            this._context.translate(position.x, position.y);
+        }
+        else {
+            this._context.translate(center.x, center.y);
+        }
         this._context.rotate(rot * Mathf.degToRad);
         //this._context.scale(scale..x, scale.y);
         //Draw
@@ -1136,9 +1173,9 @@ var Renderer = (function () {
     };
     Renderer.prototype.DrawRect = function (rect, trans) {
         if (trans === void 0) { trans = new Transform(); }
-        this.SimpleDrawRect(trans.position, Vector2.Mul(trans.scale, rect.size), rect.fillColour, trans.rotation);
+        this.SimpleDrawRect(trans.position, Vector2.Mul(trans.scale, rect.size), rect.fillColour, trans.rotation, trans.center);
         if (rect.stroke) {
-            this.SimpleStrokeRect(trans.position, Vector2.Mul(trans.scale, rect.size), rect.strokeColour);
+            this.SimpleStrokeRect(trans.position, Vector2.Mul(trans.scale, rect.size), rect.strokeColour, trans.rotation, trans.center);
         }
     };
     //Actual main drawing routine

@@ -50,12 +50,16 @@ class Renderer
     public Clear() : void { this._context.clearRect(0, 0, this.width, this.height); }
     
     //Shape drawing functions
-    public SimpleDrawRect(position : Vector2, scale : Vector2, col : Colour = Colour.black, rot : number = 0) : void
+    public SimpleDrawRect(position : Vector2, scale : Vector2, col : Colour = Colour.black, rot : number = 0, center:Vector2=null) : void
     { 
         //Save canvas context state
         this._context.save();
-        this._context.translate(position.x, position.y);
+        
+        if(center == null)  { this._context.translate(position.x, position.y); }
+        else                { this._context.translate(center.x, center.y); }
+        
         this._context.rotate(rot * Mathf.degToRad);
+        
         //this._context.scale(scale..x, scale.y);
     
         //Draw
@@ -66,12 +70,16 @@ class Renderer
         this._context.restore();
     }
     
-    public SimpleStrokeRect(position : Vector2, scale : Vector2, col : Colour = Colour.black, rot : number = 0) : void
+    public SimpleStrokeRect(position : Vector2, scale : Vector2, col : Colour = Colour.black, rot : number = 0, center:Vector2=null) : void
     { 
         //Save canvas context state
         this._context.save();
-        this._context.translate(position.x, position.y);
+
+        if(center == null)  { this._context.translate(position.x, position.y); }
+        else                { this._context.translate(center.x, center.y); }
+
         this._context.rotate(rot * Mathf.degToRad);
+
         //this._context.scale(scale..x, scale.y);
     
         //Draw
@@ -84,8 +92,8 @@ class Renderer
     
     private DrawRect(rect : Rectangle, trans : Transform = new Transform()) : void
     {
-                           this.SimpleDrawRect  (trans.position, Vector2.Mul(trans.scale, rect.size), rect.fillColour, trans.rotation);
-        if (rect.stroke) { this.SimpleStrokeRect(trans.position, Vector2.Mul(trans.scale, rect.size), rect.strokeColour); }
+                           this.SimpleDrawRect  (trans.position, Vector2.Mul(trans.scale, rect.size), rect.fillColour, trans.rotation, trans.center);
+        if (rect.stroke) { this.SimpleStrokeRect(trans.position, Vector2.Mul(trans.scale, rect.size), rect.strokeColour, trans.rotation, trans.center); }
     }
     
     //Actual main drawing routine

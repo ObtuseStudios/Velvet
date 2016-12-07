@@ -119,3 +119,8 @@ Practises:
 - Namespaces are used instead of static classes
 - If a callback is required, declare the function in the local scope
 - Add to this list if necessary...
+
+---
+
+Attribution:
+- Mainloop js (src/lib/mainloop.min.js) from https://github.com/IceCreamYou/MainLoop.js

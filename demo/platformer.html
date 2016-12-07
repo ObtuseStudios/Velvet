@@ -6,6 +6,7 @@
         <link rel="stylesheet" type="text/css" href="../misc/style.css"/>
         
         <!-- Written in typescript and compiled -->
+        <script type="text/javascript" src="../src/lib/mainloop.min.js" ></script>
         <script type="text/javascript" src="../build/script.js" ></script>
     </head>
     
@@ -71,9 +72,9 @@ function Update() {
 }
 function LateUpdate() { Display.Update(); }
 //Event listeners
-Time.AddAwakeCallback(Awake);
-Time.AddUpdateCallback(Update);
-Time.AddLateUpdateCallback(LateUpdate);
+Time.AddAwake(Awake);
+Time.AddUpdate(Update);
+Time.AddLateUpdate(LateUpdate);
         </script>
 
     </body>

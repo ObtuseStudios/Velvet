@@ -2,13 +2,15 @@
 class Transform extends SceneNode
 {
     //Currently all properties are public
-    private _position : Vector2 = new Vector2(0, 0);//Global position
-    private _scale : Vector2 = new Vector2(1, 1);   //Global scale
-    private _rotation : number = 0.0;               //Global rotation
+    private _position : Vector2; //Global position
+    private _rotation : number;  //Global rotation
+    private _scale : Vector2;    //Global scale
 
-    private _localPosition : Vector2 = new Vector2(0, 0);
-    private _localScale : Vector2 = new Vector2(0, 0);
-    private _localRotation : number = 0.0;
+    private _localPosition : Vector2;
+    private _localRotation : number;
+    private _localScale : Vector2;
+
+    private _rotationCenter : Vector2; //Position to rotate around
 
     //Setters are where the magic happens
     public get position() : Vector2 { return this._position; }
@@ -18,6 +20,9 @@ class Transform extends SceneNode
     public get localPosition() : Vector2 { return this._localPosition; }
     public get localRotation() : number { return this._localRotation; }
     public get localScale() : Vector2 { return this._localScale; }
+
+    //Right now the center cannot be set
+    public get center() : Vector2 { return this._rotationCenter; }
 
     constructor(name:string="Transform") 
     {
@@ -30,6 +35,8 @@ class Transform extends SceneNode
         this._localPosition = new Vector2(0, 0);
         this._localScale = new Vector2(1, 1);
         this._localRotation = 0.0;
+
+        this._rotationCenter = this._position.Clone();
     }
 
     //Will find the closes transform parent
@@ -55,6 +62,7 @@ class Transform extends SceneNode
 
         if(ancestor == null) { this._localPosition = this._position.Clone(); }
         else { this._localPosition = Vector2.Sub(this._position, ancestor._position); }
+        this._rotationCenter = this._position.Clone();
 
         super.Update(); 
     }
@@ -91,7 +99,8 @@ class Transform extends SceneNode
 
         if(ancestor == null) { this._position = this._localPosition.Clone(); }
         else { this._position = Vector2.Add(this._localPosition, ancestor._position); }
-
+        this._rotationCenter = this._position.Clone();
+        
         super.Update(); 
     }
 
@@ -117,7 +126,7 @@ class Transform extends SceneNode
 
         if(ancestor == null) { this._scale = this._localScale.Clone(); }
         else { this._scale = Vector2.Add(this._localScale, ancestor._scale); }
-
+        
         super.Update(); 
     }
 
@@ -132,6 +141,7 @@ class Transform extends SceneNode
         this.position = Vector2.Add(this.localPosition, parentTransform.position);
         this.scale = Vector2.Mul(this.localScale, parentTransform.scale);
         this.rotation = this.localRotation + parentTransform.rotation;
+        this._rotationCenter = this._position.Clone();
 
         //this.localPosition = Vector2.Sub(this._position, parentTransform._position);
         //this.localScale = Vector2.Sub(this._scale, parentTransform._scale);
